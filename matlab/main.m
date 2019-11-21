@@ -25,9 +25,9 @@ params = parametersDefinition();
 visualData = incomingVisualData(params, dataPath, dataFormat);
 % define the dataset's frame rate
 visualData.frameRate = 20; 
-
+% 1) the vocabulary build
 BoTW = buildingDatabase(visualData, params);
-
+% 2)  the query procedure
 [matches, HMMresults, iBoTW] = queryingDatabaseHMM(params, visualData, BoTW);
-
+% method's evaluation
 results = methodEvaluation(params, matches, groundTruth);

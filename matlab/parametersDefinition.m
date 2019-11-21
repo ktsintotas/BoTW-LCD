@@ -27,6 +27,9 @@ function params = parametersDefinition()
     % matches
     params.queryingDatabaseHMM.load = true;
     params.queryingDatabaseHMM.save = true;     
+    
+    % features' response, Phi
+    params.featuresResponse = 400.0;    
 
     % number of maximum points fed into the tracker, ni
     params.numPointsToTrack = int16(200);
@@ -46,11 +49,9 @@ function params = parametersDefinition()
     % transition matrix states
     params.numStates = 2;
     % hidden markov model transition matrix
-    params.HMM.TRANS = [.95 .05 ; .1 .9];
+    params.HMM.TRANS = [0.95 0.05 ; 0.1 0.9];
     % hidden markov model emission matrix
-    params.HMM.EMIS = [.65 .20 .15 ; 0 .4 6];
-    % observations accessed
-    params.temporalview = 1;
+    params.HMM.EMIS = [0.65 0.20 0.15 ; 0.0 0.4 0.6];
     
     % temporal consistency check
     params.temporalConsistency = true;     

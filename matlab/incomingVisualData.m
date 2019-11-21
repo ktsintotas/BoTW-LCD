@@ -44,9 +44,9 @@ function visualData = incomingVisualData(params, dataPath, dataFormat)
             if size(visualData.inputImage{i}, 3) == 3
                 visualData.inputImage{i} = rgb2gray(visualData.inputImage{i});
             end
-            % SURF points' detection
-            visualData.pointsSURF{i} = detectSURFFeatures(visualData.inputImage{i},  'MetricThreshold', 400.0);
-            % SURF points' description
+            % SURF detection
+            visualData.pointsSURF{i} = detectSURFFeatures(visualData.inputImage{i},  'MetricThreshold', params.featuresResponse);
+            % SURF description
             [visualData.featuresSURF{i}, ~] = extractFeatures(visualData.inputImage{i}, visualData.pointsSURF{i}, 'Method','SURF');      
         end
         

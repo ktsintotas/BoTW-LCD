@@ -16,16 +16,16 @@
 
 function [HMMresults] = forwardHMM(HMMresults, params, It)
     
-    % Observations along the trajectory
-    Y = HMMresults.observations(It - params.temporalview : It);
+  % observation along the trajectory
+    Y = HMMresults.observations(It);
     Y = [length(Y) + 1, Y];
     fs = zeros(params.numStates, length(Y));    
 
-    % initial state Xo
-    if HMMresults.forwardProb(1, It - (params.temporalview+1)) == 0
+    % apriori state S_t-1
+    if HMMresults.forwardProb(1, It - 1) == 0
         fs(1, 1) = 1;     
     else
-        fs(:, 1) = HMMresults.forwardProb(:, It - (params.temporalview+1));
+        fs(:, 1) = HMMresults.forwardProb(:, It - 1);
     end    
 
     % FILTERING based on the forward algorithm

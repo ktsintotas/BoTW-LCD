@@ -63,6 +63,7 @@ function BoTWnew = vocabularyManagement(BoTWnew, wordsToManage, It, properImage,
                 title('Database image')  
             
                pause;
+               
             end
             
             wordsToDelete = [wordsToDelete ; wordsToManage(w)];

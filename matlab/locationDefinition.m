@@ -3,13 +3,13 @@
 % Copyright 2019, Konstantinos Tsintotas
 % ktsintot@pme.duth.gr
 %
-% This file is part of HMM-BoTW framework for visual loop closure detection
+% This file is part of iBoTW framework for visual loop closure detection
 %
-% HMM-BoTW framework is free software: you can redistribute 
+% iBoTW framework is free software: you can redistribute 
 % it and/or modify it under the terms of the MIT License as 
 % published by the corresponding authors.
 %  
-% HMM-BoTW pipeline is distributed in the hope that it will be 
+% iBoTW pipeline is distributed in the hope that it will be 
 % useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
 % MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 % MIT License for more details. <https://opensource.org/licenses/MIT>
@@ -39,6 +39,8 @@ function [properImage, inliersTotal] = locationDefinition(params, matches, candi
     % geometrical check = ON, temporal consistency = OFF
     elseif params.verification == true && (params.temporalConsistency == false || (params.temporalConsistency == true && matches.matches(It-1) == 0))
         candidates = find(candidateLocationsVotes);
+        [~,idxx] = sort(candidateLocationsVotes(candidates), 'descend');
+        candidates = candidates(idxx);
         if sum(candidates) ~= 0
             [properImage, inliersTotal] = geometricalCheck(It, iBoTW, params, candidates, visualData);
         end
@@ -49,6 +51,8 @@ function [properImage, inliersTotal] = locationDefinition(params, matches, candi
         if firstImg < length(candidateLocationsVotes)
             candidates = find(candidateLocationsVotes(max(1, firstImg) : min(length(candidateLocationsVotes), lastImg)));
             candidates = int16(candidates) + max(1, firstImg) -1;
+            [~,idxx] = sort(candidateLocationsVotes(candidates), 'descend');
+            candidates = candidates(idxx);
             if sum(candidates) ~= 0
                 [properImage, inliersTotal] = geometricalCheck(It, iBoTW, params, candidates, visualData);
             end

@@ -74,11 +74,11 @@ function BoTW = buildingDatabase(visualData, params)
                     % tracked points in the incoming frame
                     [trackedPoints, trackedPointsValidity] = pointTracker(visualData.inputImage{It}); 
 
-                    % A.2 GUIDED GEATURE DETECTION             
+                    % A.2 GUIDED GEATURE SELECTION
                     [BoTW.queryPoints{It}, BoTW.queryDescriptors{It}, pointRepeatability, trackObservation, pointsToSearch, descriptorsToSearch, trackedPointsBag, trackedDescriptorsBag] = ... 
                         guidedFeatureDetection(params, visualData, previousIt, It, BoTW.queryPoints{previousIt}, BoTW.queryDescriptors{previousIt}, trackedPoints, trackedPointsValidity, pointRepeatability, trackedPointsBag, trackedDescriptorsBag, trackObservation);
 
-                    % A.3 BAG OF TRACKED WORDS
+                    % A.3 TRACKED WORDS GENERATION
                     newPointCounter = int16(0);
                     deletion = false;
                     pointsToDelete = false(length(trackObservation), 1);                

@@ -1,6 +1,6 @@
 % 
 
-% Copyright 2019, Konstantinos Tsintotas
+% Copyright 2019, Konstantinos A. Tsintotas
 % ktsintot@pme.duth.gr
 %
 % This file is part of HMM-BoTW framework for visual loop closure detection
@@ -14,20 +14,31 @@
 % MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 % MIT License for more details. <https://opensource.org/licenses/MIT>
 
-function [matches, HMMresults, iBoTW] = queryingDatabaseHMM(params, visualData, BoTW)
+function [matches, HMMresults, iBoTW, timer] = queryingDatabaseHMM(params, visualData, BoTW, timer)
 
     if params.queryingDatabaseHMM.load == true && exist('results/queryingDatabaseHMM.mat', 'file')    
         load('results/queryingDatabaseHMM.mat');
 
     else
-
+        
+        % copy the visual dictionary in order a comparison to be permitted
         iBoTW = initializationBoTWimproved(BoTW, visualData);
+        % memory allocation for system's outputs
         matches = matchesInitialization(visualData, params);
+        % memory allocation for system's results
         HMMresults = HMMinitialization(visualData);
-
+        % memory allocation for timer for brute force database search pre-allocation
+        timer.databaseSearch = zeros(visualData.imagesLoaded, 1,'single');
+        % memory allocation for timer for votes distribution pre-allocation
+        timer.votesDistribution = zeros(visualData.imagesLoaded, 1,'single');
+        % memory allocation for timer for Bayesian filtering pre-allocation
+        timer.bayesianFiltering = zeros(visualData.imagesLoaded, 1,'single');
+        % memory allocation for timer for geometrical verification pre-allocation
+        timer.geometricalVerification = zeros(visualData.imagesLoaded, 1,'single');
+        
         for It = int16(1 : visualData.imagesLoaded)    
 disp(It)
-            % B.1 MAP VOTING
+            % SEARCHING THE DATABASE
             % excluding the vocabulary area which would be avoided  
             if iBoTW.maximumActivePoint(It) < visualData.frameRate
                 lastDatabaseLocation = It - ceil(3 * visualData.frameRate);
@@ -49,28 +60,39 @@ disp(It)
 
             % vote aggregation
             if ~isempty(database) && size(iBoTW.queryDescriptors{It}, 1) > params.inliersTheshold
-                if parallel.gpu.GPUDevice.isAvailable                    
-                    % k-NN search using the GPU if available
-                    queryIdxNN = gather(single(knnsearch(gpuArray(database), gpuArray(iBoTW.queryDescriptors{It}), 'K', 1 )));                    
+                % k-NN search using the GPU if available
+                if parallel.gpu.GPUDevice.isAvailable && params.GPUenabled == true
+                    % start the timer for the database search
+                    tic 
+                    queryIdxNN = gather(single(knnsearch(gpuArray(database), gpuArray(iBoTW.queryDescriptors{It}), 'K', 1 )));               
+                    % stop the timer for the database search
+                    timer.databaseSearch(It, 1) = toc;                    
+                % k-NN search using only the CPU
                 else
-                    % k-NN search
+                    % start the timer for the database search
+                    tic
                     queryIdxNN = single(knnsearch(database, iBoTW.queryDescriptors{It}, 'K', 1, 'NSMethod', 'exhaustive'));
+                    % stop the timer for the database search
+                    timer.databaseSearch(It, 1) = toc;
                 end
                 % knn Indexing for the correspondance at visual vocabulary management
-                matches.knnIDx(1 : length(queryIdxNN), It) = queryIdxNN;                    
+                matches.knnIDx(1 : length(queryIdxNN), It) = queryIdxNN;
                 
+                % start the timer for the votes' distribution
+                tic 
                 % votes distribution through the Nearest Neighbor procedure
                 for v = int16(1 : length(queryIdxNN))                    
                     votedLocations = int16(find(iBoTW.twLocationIndex(queryIdxNN(v), 1 : lastDatabaseLocation) == true));
                     matches.votesMatrix(It, votedLocations) = matches.votesMatrix(It, votedLocations) + 1;                    
                 end
-              
-                % B.2 PROBABILISTIC BELIEF GENERATOR
+                % stop the timer for the votes' distribution
+                timer.votesDistribution(It, 1) = toc;
+                
+                % NAVIGATION USING PROBABILISTIC SCORING
                 % high-voted locations for binomial probability computation process
                 imagesForBinomial = int16(find(matches.votesMatrix(It, 1 : lastDatabaseLocation) >= 0.02 * size(iBoTW.queryDescriptors{It}, 1)));
                 % locations which pass the two conditions
-                candidateLocationsObservation2 = zeros(1, lastDatabaseLocation, 'int16');
-                candidateLocationsObservation3 = zeros(1, lastDatabaseLocation, 'int16');
+                candidateLocationsObservation = zeros(1, lastDatabaseLocation, 'int16');
                 % number of Tracked Words within the searching area 
                 LAMDA = databaseIndexTemp;
                 % number of query’s Tracked Points (number of points after the guided feature-detection)
@@ -91,16 +113,10 @@ disp(It)
                 Condition2Locations = int16(find(xl > expectedValue));
                 % locations which satisfy condition 2 and condition 1 - observation 3
                 if ~isempty(Condition2Locations) ... 
-                        && ~isempty(find(locationProbability(Condition2Locations) < params.observation3threshold, 1))
-                    HMMresults.observations(It) = 3;
-                    candidateLocations = imagesForBinomial(Condition2Locations(find(locationProbability(Condition2Locations) < params.observation3threshold)));
-                    candidateLocationsObservation3(candidateLocations) = matches.votesMatrix(It, candidateLocations);
-                % locations which satisfy condition 2 and condition 1 - observation 2
-                elseif ~isempty(Condition2Locations) && sum(candidateLocationsObservation3) == 0 ...
-                        && ~isempty(find(locationProbability(Condition2Locations) < params.observation2threshold, 1))
+                        && ~isempty(find(locationProbability(Condition2Locations) < params.observationThreshold, 1))
                     HMMresults.observations(It) = 2;
-                    candidateLocations = imagesForBinomial(Condition2Locations(find(locationProbability(Condition2Locations) < params.observation2threshold)));
-                    candidateLocationsObservation2(candidateLocations) = matches.votesMatrix(It, candidateLocations);                
+                    candidateLocations = imagesForBinomial(Condition2Locations(find(locationProbability(Condition2Locations) < params.observationThreshold)));
+                    candidateLocationsObservation(candidateLocations) = matches.votesMatrix(It, candidateLocations);         
                 end
                 
                 % MATCHING PROCEDURE
@@ -108,9 +124,9 @@ disp(It)
                 if params.filtering == false && sum(candidateLocationsObservation3) ~= 0 && params.verification == false                
                     [~, properImage] = max(candidateLocationsObservation3);
                     matches.loopClosureMatrix(It, properImage) = true;
-                    matches.matches(It) = properImage;                    
-                % using the geometrical check in the original version by searching to every location in cases of votes' equality, 
-                % also "no" temporal consistency is included
+                    matches.matches(It) = properImage;
+
+                % using the geometrical check in the original version by searching to every location in cases of votes' equality, also "no" temporal consistency is included
                 elseif params.filtering == false && sum(candidateLocationsObservation3) ~= 0 && params.verification == true          
                     [votes, ~] = max(candidateLocationsObservation3);
                     candidates = find(candidateLocationsObservation3 == votes);
@@ -118,34 +134,17 @@ disp(It)
                     if properImage ~= 0
                         matches.loopClosureMatrix(It, properImage) = true; 
                         matches.matches(It) = properImage;                                  
-                    end              
-                    
-                % filter the binomial state-result through HMM forward algorithm 
+                    end
+
+                % filtering the binomial through HMM forward algorithm 
                 elseif params.filtering == true
-                    % Hidden Markov Model process
-                    [HMMresults] = forwardHMM(HMMresults, params, It);                
-                    
-                    % observation 3 and loop closure detection
-                    if HMMresults.loopStates(It) == 2 && HMMresults.observations(It) == 3         
-                        % define the appropriate high-voted loop closure image from the candidate ones
-                        [properImage, inliersTotal] = locationDefinition(params, matches, candidateLocationsObservation3, It, iBoTW, visualData);                   
-                        if properImage ~= 0
-                            matches.loopClosureMatrix(It, properImage) = true;
-                            matches.matches(It) = properImage;
-                            matches.inliers(It) = inliersTotal;
-                        end                        
-                        % vocabulary management
-                        if  params.vocabularyManagement == true && properImage ~= 0 && matches.loopClosureMatrix(It, properImage) == true
-                            wordsToManage = single(find(iBoTW.twIndex(:, 2) == It));                    
-                            if ~isempty(wordsToManage)                        
-                                iBoTW = vocabularyManagement(iBoTW, wordsToManage, It, properImage, matches, visualData, params);                        
-                            end
-                        end
+                    % Bayesian filtering                    
+                    [HMMresults, timer] = forwardHMM(HMMresults, params, It, timer);           
 
                     % observation 2 and loop closure detection
-                    elseif HMMresults.loopStates(It) == 2 && HMMresults.observations(It) == 2
+                    if HMMresults.loopStates(It) == 2 && HMMresults.observations(It) == 2
                         % define the appropriate high-voted loop closure image from the candidate ones
-                        [properImage, inliersTotal] = locationDefinition(params, matches, candidateLocationsObservation2, It, iBoTW, visualData);
+                        [properImage, inliersTotal, timer] = locationDefinition(params, matches, candidateLocationsObservation, It, iBoTW, visualData, timer);
                         if properImage ~= 0
                             matches.loopClosureMatrix(It, properImage) = true;
                             matches.matches(It) = properImage;            

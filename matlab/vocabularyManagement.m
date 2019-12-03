@@ -1,6 +1,6 @@
 % 
 
-% Copyright 2019, Konstantinos Tsintotas
+% Copyright 2019, Konstantinos A. Tsintotas
 % ktsintot@pme.duth.gr
 %
 % This file is part of HMM-BoTW framework for visual loop closure detection
@@ -14,8 +14,9 @@
 % MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 % MIT License for more details. <https://opensource.org/licenses/MIT>
 
-function BoTWnew = vocabularyManagement(BoTWnew, wordsToManage, It, properImage, matches, visualData, params)
-
+function [BoTWnew, timer] = vocabularyManagement(BoTWnew, wordsToManage, It, properImage, matches, visualData, params, timer)
+    
+    wordsUpdate = zeros(1, params.numPointsToTrack,'single');
     wordsDist = zeros(length(wordsToManage), 1);
     wordsToDelete = [];
     
@@ -24,7 +25,7 @@ function BoTWnew = vocabularyManagement(BoTWnew, wordsToManage, It, properImage,
      end
     
     for w = 1 : length(wordsToManage)        
-              
+        tic % WORDS UPDATE        
         h = size(BoTWnew.trackedWordDescriptors{wordsToManage(w)}, 1);
         % find which descriptor is being tracked from the query points which subsequently is transformed into Tracked Word
         id = knnsearch(BoTWnew.queryDescriptors{It}, BoTWnew.trackedWordDescriptors{wordsToManage(w)}(end, :), 'K', 1);
@@ -37,8 +38,9 @@ function BoTWnew = vocabularyManagement(BoTWnew, wordsToManage, It, properImage,
         idx = idx(1);
 
         % comparison between the tracked words
-        wordsDist(w) = norm(BoTWnew.bagOfTrackedWords(wordsToManage(w), :) - BoTWnew.bagOfTrackedWords(votedDatabaseWords(idx), :));
-                
+        wordsDist(w) = norm(BoTWnew.bagOfTrackedWords(wordsToManage(w), :) - BoTWnew.bagOfTrackedWords(votedDatabaseWords(idx), :));        
+        wordsUpdate(1, w) = toc;
+        
         if wordsDist(w) <= params.wordsDist && (occurences/h) > params.wordsCorrespondence && ...  
                 BoTWnew.twLocationIndex(votedDatabaseWords(idx), properImage) == true                
             
@@ -77,6 +79,9 @@ function BoTWnew = vocabularyManagement(BoTWnew, wordsToManage, It, properImage,
         end
     end
     
+    wordsUpdate = mean(wordsUpdate);
+    timer.wordsUpdate(It, 1) = wordsUpdate;   
+        
     % deleting the generated words which are very similar and are merged
     BoTWnew.bagOfTrackedWords(wordsToDelete, :) = [];
     BoTWnew.twIndex(wordsToDelete, :) = [];

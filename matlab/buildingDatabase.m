@@ -1,6 +1,6 @@
 % 
 
-% Copyright 2019, Konstantinos Tsintotas
+% Copyright 2019, Konstantinos A. Tsintotas
 % ktsintot@pme.duth.gr
 %
 % This file is part of HMM-BoTW framework for visual loop closure detection
@@ -14,27 +14,32 @@
 % MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 % MIT License for more details. <https://opensource.org/licenses/MIT>
 
-function BoTW = buildingDatabase(visualData, params)
+function [BoTW, timer] = buildingDatabase(visualData, params, timer)
 
     % shall we load the visual information and its' extracted variables?
     if params.buildingDatabase.load == true && exist('results/buildingDatabase.mat', 'file')    
         load('results/buildingDatabase.mat'); 
     
-    else       
+    else
+        
         % tracked words' counter
         twCounter = single(0);        
         % initializing the Bag of Tracked Words database
-        BoTW = initializationBoTW(visualData);        
+        BoTW = initializationBoTW(visualData);       
         % initialization of points' tracking validity based on our conditions
         trackObservation = false(params.numPointsToTrack, 1);
         % initialization of points' representation along consecutive features
-        pointRepeatability = ones(params.numPointsToTrack, 1, 'int16');    
+        pointRepeatability = ones(params.numPointsToTrack, 1, 'int16');
+        % timer for feature tracking pre-allocation
+        timer.trackingPoints = zeros(visualData.imagesLoaded, 1,'single');
+        % timer for guided feature selection pre-allocation
+        timer.guidedFeatureSelection = zeros(visualData.imagesLoaded, 1,'single');
 
         for It = int16(1 : visualData.imagesLoaded)
             disp(It)
             % initialization of points and descriptors   
             if It == 1                               
-                
+
                 if size(visualData.pointsSURF{It}, 1) > params.numPointsToTrack
                     % initial query points and initial points for the tracker
                     BoTW.queryPoints{It}= visualData.pointsSURF{It}.Location(1 : params.numPointsToTrack, :);
@@ -54,31 +59,33 @@ function BoTW = buildingDatabase(visualData, params)
                 % point tracker object generation that tracks a set of points
                 pointTracker = vision.PointTracker('NumPyramidLevels', 3, 'MaxBidirectionalError', 3); 
                 initialize(pointTracker, BoTW.queryPoints{It}, visualData.inputImage{It});
-                
+
             end
-              
+
             if It > 1
-                % I(t-1)
+
                 previousIt = int16(It-1);
                 
                 if ~isempty(BoTW.queryPoints{previousIt}) && size(visualData.pointsSURF{It}, 1) > params.inliersTheshold
             
                     if It > 2                
                         % objects lock when you call them and the release function unlocks them
-                        release(pointTracker); 
+                        release(pointTracker);
                         % initialize again the tracker with the new and more accurate points            
-                        initialize(pointTracker, BoTW.queryPoints{previousIt}, visualData.inputImage{previousIt}); 
+                        initialize(pointTracker, BoTW.queryPoints{previousIt}, visualData.inputImage{previousIt});
                     end
-
-                    % A.1 POINT TRACKING
+                    % start the timer for the Kanade-Lucas-Tomase tracker
+                    tic 
                     % tracked points in the incoming frame
-                    [trackedPoints, trackedPointsValidity] = pointTracker(visualData.inputImage{It}); 
+                    [trackedPoints, trackedPointsValidity] = pointTracker(visualData.inputImage{It});
+                    % stop the timer for the Kanade-Lucas-Tomase tracker
+                    timer.trackingPoints(It, 1) = toc;
 
-                    % A.2 GUIDED GEATURE SELECTION
-                    [BoTW.queryPoints{It}, BoTW.queryDescriptors{It}, pointRepeatability, trackObservation, pointsToSearch, descriptorsToSearch, trackedPointsBag, trackedDescriptorsBag] = ... 
-                        guidedFeatureDetection(params, visualData, previousIt, It, BoTW.queryPoints{previousIt}, BoTW.queryDescriptors{previousIt}, trackedPoints, trackedPointsValidity, pointRepeatability, trackedPointsBag, trackedDescriptorsBag, trackObservation);
+                    % GUIDED FEATURE SELECTION
+                    [BoTW.queryPoints{It}, BoTW.queryDescriptors{It}, pointRepeatability, trackObservation, pointsToSearch, descriptorsToSearch, trackedPointsBag, trackedDescriptorsBag, timer] = ... 
+                        guidedFeatureSelection(params, visualData, previousIt, It, BoTW.queryPoints{previousIt}, BoTW.queryDescriptors{previousIt}, trackedPoints, trackedPointsValidity, pointRepeatability, trackedPointsBag, trackedDescriptorsBag, trackObservation, timer);
 
-                    % A.3 TRACKED WORDS GENERATION
+                    % TRACKED WORD GENERATION
                     newPointCounter = int16(0);
                     deletion = false;
                     pointsToDelete = false(length(trackObservation), 1);                
@@ -159,7 +166,7 @@ function BoTW = buildingDatabase(visualData, params)
         
         % save the generated database if not a file exists
         if params.buildingDatabase.save
-            save('results/buildingDatabase', 'BoTW', '-v7.3');
+            save('results/buildingDatabase', 'BoTW', 'timer', '-v7.3');
         end
         
     end

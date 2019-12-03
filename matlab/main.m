@@ -1,6 +1,6 @@
 % 
 
-% Copyright 2019, Konstantinos Tsintotas
+% Copyright 2019, Konstantinos A. Tsintotas
 % ktsintot@pme.duth.gr
 %
 % This file is part of HMM-BoTW framework for visual loop closure detection
@@ -17,17 +17,17 @@
 clear all; close all;
 
 dataPath = ('images path\'); % e.g., myDatasetImages\
-
 dataFormat = '*.png'; % e.g., for png input data
 
-params = parametersDefinition();    
-
-visualData = incomingVisualData(params, dataPath, dataFormat);
-% define the dataset's frame rate
-visualData.frameRate = 20; 
+% parameters' definitions
+params = parametersDefinition();
+% extraction of visual sensory information
+[visualData, timer] = incomingVisualData(params, dataPath, dataFormat);
+% dataset's frame rate definition
+visualData.frameRate = 1; 
 % 1) the vocabulary build
-BoTW = buildingDatabase(visualData, params);
+[BoTW, timer] = buildingDatabase(visualData, params, timer);
 % 2)  the query procedure
-[matches, HMMresults, iBoTW] = queryingDatabaseHMM(params, visualData, BoTW);
+[matches, HMMresults, iBoTW, timer] = queryingDatabaseHMM(params, visualData, BoTW, timer);
 % method's evaluation
 results = methodEvaluation(params, matches, groundTruth);

@@ -1,6 +1,6 @@
 % 
 
-% Copyright 2019, Konstantinos Tsintotas
+% Copyright 2019, Konstantinos A. Tsintotas
 % ktsintot@pme.duth.gr
 %
 % This file is part of HMM-BoTW framework for visual loop closure detection
@@ -16,7 +16,7 @@
 
 function BoTW = initializationBoTW(visualData)
         
-        % visual dictionary
+        % the visual dictionary
         BoTW.bagOfTrackedWords = single([]);
         % tracked words' indexing
         BoTW.twIndex = int16([]);

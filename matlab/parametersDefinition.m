@@ -1,6 +1,6 @@
 % 
 
-% Copyright 2019, Konstantinos Tsintotas
+% Copyright 2019, Konstantinos A. Tsintotas
 % ktsintot@pme.duth.gr
 %
 % This file is part of HMM-BoTW framework for visual loop closure detection
@@ -40,26 +40,28 @@ function params = parametersDefinition()
     % minimum descriptors distance, vita
     params.descriptorsDist = single(0.6);
     
-    % loop closure threshold, delta
-    params.observation2threshold = 1e-5;
-    params.observation3threshold = 1e-12;
+    % using the GPU if supported
+    params.GPUenabled = true;
+    
+    % loop closure threshold, th
+    params.observationThreshold = 1e-8;
     
     % hidden markon forward algorithm
     params.filtering = true;    
     % transition matrix states
     params.numStates = 2;
     % hidden markov model transition matrix
-    params.HMM.TRANS = [0.95 0.05 ; 0.1 0.9];
+    params.HMM.TRANS = [0.98 0.02 ; 0.03 0.97];
     % hidden markov model emission matrix
-    params.HMM.EMIS = [0.65 0.20 0.15 ; 0.0 0.4 0.6];
+    params.HMM.EMIS = [0.93 0.07 ; 0.1 0.9];
     
     % temporal consistency check
-    params.temporalConsistency = true;     
+    params.temporalConsistency = false;
     % temporal consistency locations' range
-    params.locationRange = 8;    
+    params.locationRange = 8;
     
     % vocabulary management
-    params.vocabularyManagement = true; 
+    params.vocabularyManagement = false; 
     % tracked words correspondance visualization
     params.visualizationMerging = false;
     % tracked words' maximum distance

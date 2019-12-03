@@ -18,7 +18,7 @@ function results = methodEvaluation(params, matches, groundTruthMatrix)
 
 %% Method Evaluation
 
-    results = zeros(1, 7);
+    results = zeros(1, 6);
        
     loopClosureMatrix = matches.loopClosureMatrix;
 
@@ -64,8 +64,7 @@ function results = methodEvaluation(params, matches, groundTruthMatrix)
     results(1, 2) = recallScore;   
     results(1, 3) = int16(truePositives);   
     results(1, 4) = int16(falsePositives);
-    results(1, 5) = params.observation3threshold;
-    results(1, 6) = params.observation2threshold;
-    results(1, 7) = groundTruthNumber;
+    results(1, 5) = params.observationThreshold;    
+    results(1, 6) = groundTruthNumber;
     
 end

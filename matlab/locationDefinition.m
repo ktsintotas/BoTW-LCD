@@ -1,6 +1,6 @@
 % 
 
-% Copyright 2019, Konstantinos Tsintotas
+% Copyright 2019, Konstantinos A. Tsintotas
 % ktsintot@pme.duth.gr
 %
 % This file is part of iBoTW framework for visual loop closure detection
@@ -14,7 +14,7 @@
 % MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 % MIT License for more details. <https://opensource.org/licenses/MIT>
 
-function [properImage, inliersTotal] = locationDefinition(params, matches, candidateLocationsVotes, It, iBoTW, visualData)
+function [properImage, inliersTotal, timer] = locationDefinition(params, matches, candidateLocationsVotes, It, iBoTW, visualData, timer)
 
     inliersTotal = int16(0);
     properImage = int16(0);
@@ -42,7 +42,9 @@ function [properImage, inliersTotal] = locationDefinition(params, matches, candi
         [~,idxx] = sort(candidateLocationsVotes(candidates), 'descend');
         candidates = candidates(idxx);
         if sum(candidates) ~= 0
+            tic % GEOMETRICAL VERIFICATION
             [properImage, inliersTotal] = geometricalCheck(It, iBoTW, params, candidates, visualData);
+            timer.geometricalVerification(It, 1) = toc;
         end
     % geometrical check = ON, temporal consistency = ON
     elseif params.verification == true && params.temporalConsistency == true && matches.matches(It-1) ~= 0                                                       
@@ -54,7 +56,9 @@ function [properImage, inliersTotal] = locationDefinition(params, matches, candi
             [~,idxx] = sort(candidateLocationsVotes(candidates), 'descend');
             candidates = candidates(idxx);
             if sum(candidates) ~= 0
+                tic % GEOMETRICAL VERIFICATION
                 [properImage, inliersTotal] = geometricalCheck(It, iBoTW, params, candidates, visualData);
+                timer.geometricalVerification(It, 1) = toc;
             end
         end                                                             
     end

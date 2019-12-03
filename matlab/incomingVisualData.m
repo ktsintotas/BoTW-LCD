@@ -1,6 +1,6 @@
 % 
 
-% Copyright 2019, Konstantinos Tsintotas
+% Copyright 2019, Konstantinos A. Tsintotas
 % ktsintot@pme.duth.gr
 %
 % This file is part of HMM-BoTW framework for visual loop closure detection
@@ -14,7 +14,7 @@
 % MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 % MIT License for more details. <https://opensource.org/licenses/MIT>
 
-function visualData = incomingVisualData(params, dataPath, dataFormat)
+function [visualData, timer] = incomingVisualData(params, dataPath, dataFormat)
     
     % shall we load the visual information and its' extracted variables?
     if params.visualData.load == true && exist('results/visualData.mat', 'file')    
@@ -22,37 +22,58 @@ function visualData = incomingVisualData(params, dataPath, dataFormat)
         
     else       
         
-        % list images
+        % list of the dataset's images
         images = dir([dataPath dataFormat]);
         % fields to be removed from images' structure
         fields = {'folder','date','bytes','isdir','datenum'};    
         images = rmfield(images, fields);
-        % local points extraction and description through SURF method
-        visualData.imagesLoaded = int16(size(images,1));
+        % the total of the incomming visual sensory information
+        visualData.imagesLoaded = int16(size(images, 1));
                 
         % images' space pre-allocation
         visualData.inputImage = cell(1, visualData.imagesLoaded);
-        % images descriptors' space pre-allocation
+        % images' descriptors space pre-allocation
         visualData.featuresSURF = cell(1, visualData.imagesLoaded);
-        % images points' space pre-allocation
-        visualData.pointsSURF = cell(1, visualData.imagesLoaded);
+        % images' points space pre-allocation
+        visualData.pointsSURF = cell(1, visualData.imagesLoaded);        
         
-        for i = 1 : visualData.imagesLoaded
-            disp(i)
-            visualData.inputImage{i} = imread([dataPath images(i).name]);
-            % if input data is RGB convert it to grayscale
-            if size(visualData.inputImage{i}, 3) == 3
-                visualData.inputImage{i} = rgb2gray(visualData.inputImage{i});
+        % timer for feature detection pre-allocation
+        timer.featuresDetection = zeros(visualData.imagesLoaded, 1,'single');
+        % timer for feature description pre-allocation
+        timer.featuresDescription = zeros(visualData.imagesLoaded, 1,'single');
+        
+        for It = 1 : visualData.imagesLoaded
+            
+            % display the current frame
+            disp(It)
+            % read the incoming camera measurement
+            visualData.inputImage{It} = imread([dataPath images(It).name]);
+            % if  the input data is RGB, then convert it to a grayscale one
+            if size(visualData.inputImage{It}, 3) == 3
+                visualData.inputImage{It} = rgb2gray(visualData.inputImage{It});
             end
+            
+            % start the timer for the points' detection
+            tic
             % SURF detection
-            visualData.pointsSURF{i} = detectSURFFeatures(visualData.inputImage{i},  'MetricThreshold', params.featuresResponse);
+            visualData.pointsSURF{It} = detectSURFFeatures(visualData.inputImage{It},  'MetricThreshold', params.featuresResponse);
+            % stop the timer for the points' detection
+            timer.featuresDetection(It, 1) = toc;
+            
+            % start the timer for the points' description
+            tic
             % SURF description
-            [visualData.featuresSURF{i}, ~] = extractFeatures(visualData.inputImage{i}, visualData.pointsSURF{i}, 'Method','SURF');      
+            [visualData.featuresSURF{It}, ~] = extractFeatures(visualData.inputImage{It}, visualData.pointsSURF{It}, 'Method','SURF');
+            % stop the timer for the points' description
+            timer.featuresDescription(It, 1) = toc;
+            
         end
         
-        % save the variables if not a file allready exists
+        % save the variables if not they not allready exist
         if params.visualData.save
-            save('results/visualData', 'visualData', '-v7.3');
+            save('results/visualData', 'visualData', 'timer', '-v7.3');
         end
+        
     end
+    
 end

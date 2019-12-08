@@ -29,6 +29,11 @@ function [visualData, timer] = incomingVisualData(params, dataPath, dataFormat)
         images = rmfield(images, fields);
         % the total of the incomming visual sensory information
         visualData.imagesLoaded = int16(size(images, 1));
+        
+        % only for New College dataset
+%         images(1 : 2 : size(images,1)) = []; % Extracting the left camera measurements
+%         images = images(1 : 20 : size(images, 1));
+%         visualData.imagesLoaded = int16(size(images,1));     
                 
         % images' space pre-allocation
         visualData.inputImage = cell(1, visualData.imagesLoaded);

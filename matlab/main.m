@@ -24,10 +24,15 @@ params = parametersDefinition();
 % extraction of visual sensory information
 [visualData, timer] = incomingVisualData(params, dataPath, dataFormat);
 % dataset's frame rate definition
-visualData.frameRate = 1; 
+visualData.frameRate = 20;
+% timers memory allocation
+timer = timersInitialization(visualData, timer);
 % 1) the vocabulary build
 [BoTW, timer] = buildingDatabase(visualData, params, timer);
 % 2)  the query procedure
 [matches, HMMresults, iBoTW, timer] = queryingDatabaseHMM(params, visualData, BoTW, timer);
 % method's evaluation
+close all;
 results = methodEvaluation(params, matches, groundTruth);
+groundTruth = bitor(groundTruth, matches.loopClosureMatrix);
+results = methodEvaluation(params, matches, C);

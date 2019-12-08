@@ -14,9 +14,8 @@
 % MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 % MIT License for more details. <https://opensource.org/licenses/MIT>
 
-function [HMMresults, timer] = forwardHMM(HMMresults, params, It, timer)
-   
-    tic % BAYESIAN FILTERING
+function [HMMresults] = forwardHMM(HMMresults, params, It)
+       
     % observation along the trajectory
     Y = HMMresults.observations(It);
     Y = [length(Y) + 1, Y];
@@ -35,8 +34,7 @@ function [HMMresults, timer] = forwardHMM(HMMresults, params, It, timer)
             fs(state, i) = params.HMM.EMIS(state, Y(i)) .* (sum(fs(:, i-1) .* params.HMM.TRANS(:, state)));
         end
         fs(:, i) =  fs(:, i)./sum(fs(:, i));        
-    end    
-    timer.bayesianFiltering(It, 1) = toc;
+    end
     
     % probabilities registration
     HMMresults.forwardProb(:, It) = fs(:, length(Y));

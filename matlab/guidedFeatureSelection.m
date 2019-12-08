@@ -30,18 +30,18 @@ function [pointsFedtoTracker, pointsDescriptors, pointRepeatability, trackObserv
         % exclusion of descriptor that used before from guided feature detection in order a duplicate to be avoided
         descriptorsToSearch(excludedPoint, :) = [];
         
+        % start the timer for the guided feature selection
+        tic
+        
         % check if point of the previous image is tracked in the current and if the number of points are lower the desired            
         if j <= size(trackedPointsValidity, 1) && trackedPointsValidity(j) == 1 && ~isempty(pointsToSearch)
-            % start the timer for the guided feature selection
-            tic 
+            % edo itant to tic
             % nearest neighbor index and points' distance between the tracked point "tp" and SURF points "SP" in I(t)
             [IdxNN, pointsDist] = knnsearch(pointsToSearch, trackedPoints(j, :), 'K', 1, 'NSMethod', 'kdtree');
             % SURF Points nearest neighbor in order to find the appropriate descriptor in previous image
             [p, ~] = knnsearch(visualData.pointsSURF{previousImg}.Location, pointsFedtoTracker(j, :), 'K', 1, 'NSMethod', 'kdtree' );
             % descriptors' distance
             descriptorsDist= norm(visualData.featuresSURF{previousImg}(p, :) - descriptorsToSearch(IdxNN, :));
-            % stop the timer for the guided feature selection
-            guidedFeatureSelectionTiming(1, j) = toc;
 
             % two conditions for acceptance of a tracked point
             if pointsDist < params.pointsDist && descriptorsDist < params.descriptorsDist
@@ -67,9 +67,14 @@ function [pointsFedtoTracker, pointsDescriptors, pointRepeatability, trackObserv
         else
             trackObservation(j) = false;      
             excludedPoint = [];
-        end   
+        end
+        
+        % stop the timer for the guided feature selection
+        guidedFeatureSelectionTiming(1, j) = toc;
         
     end
+    % stop the timer for the vocabulaly management
+%     timer.wordsUpdate(It, 1) = toc;   
     
     guidedFeatureSelectionTiming = mean(guidedFeatureSelectionTiming);
     timer.guidedFeatureSelection(It, 1) = guidedFeatureSelectionTiming;

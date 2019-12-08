@@ -14,50 +14,54 @@
 % MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 % MIT License for more details. <https://opensource.org/licenses/MIT>
 
-function [properImage, inliersTotal, timer] = locationDefinition(params, matches, candidateLocationsVotes, It, iBoTW, visualData, timer)
+function [properImage, inliersTotal, timer] = locationDefinition(params, matches, candidateLocationsScores, It, iBoTW, visualData, timer)
 
     inliersTotal = int16(0);
     properImage = int16(0);
     
     % geometrical check = OFF, temporal consistency = OFF
     if params.verification == false && (params.temporalConsistency == false || (params.temporalConsistency == true && matches.matches(It-1) == 0))
-        [votes, ~] = max(candidateLocationsVotes);
-        if votes ~= 0
-            [~, properImage] = max(candidateLocationsVotes);
+        [value, ~] = min(candidateLocationsScores(candidateLocationsScores>0));
+        if value ~= 0                       
+            properImage = max(find(candidateLocationsScores == value));
         end
     % geometrical check = OFF, temporal consistency = ON
     elseif params.verification == false && params.temporalConsistency == true && matches.matches(It-1) ~= 0
         firstImg = matches.matches(It-1) - params.locationRange;
         lastImg = matches.matches(It-1) + params.locationRange;
-        if firstImg < length(candidateLocationsVotes)
-            [votes, ~] = max(candidateLocationsVotes(max(1, firstImg) : min(length(candidateLocationsVotes), lastImg)));                        
-            if votes ~= 0
-                [~, properImage] = max(candidateLocationsVotes(max(1, firstImg) : min(length(candidateLocationsVotes), lastImg)));                        
-                properImage = properImage + max(1, firstImg) -1;
+        if firstImg < length(candidateLocationsScores)
+            scores = candidateLocationsScores(max(1, firstImg) : min(length(candidateLocationsScores), lastImg));
+            [value, ~] = min(scores(scores>0));
+            if value ~= 0
+                properImage = max(find(candidateLocationsScores == value));
             end
         end                            
     % geometrical check = ON, temporal consistency = OFF
-    elseif params.verification == true && (params.temporalConsistency == false || (params.temporalConsistency == true && matches.matches(It-1) == 0))
-        candidates = find(candidateLocationsVotes);
-        [~,idxx] = sort(candidateLocationsVotes(candidates), 'descend');
+    elseif params.verification == true && (params.temporalConsistency == false || (params.temporalConsistency == true && matches.matches(It-1) == 0))       
+        candidates = find(candidateLocationsScores);
+        [~,idxx] = sort(candidateLocationsScores(candidates), 'ascend');
         candidates = candidates(idxx);
         if sum(candidates) ~= 0
-            tic % GEOMETRICAL VERIFICATION
-            [properImage, inliersTotal] = geometricalCheck(It, iBoTW, params, candidates, visualData);
+            % start the timer for the geometrical verification
+            tic            
+            [properImage, inliersTotal] = geometricalCheck(It, iBoTW, params, candidates, visualData);            
+            % stop the timer for the geometrical verification
             timer.geometricalVerification(It, 1) = toc;
         end
     % geometrical check = ON, temporal consistency = ON
     elseif params.verification == true && params.temporalConsistency == true && matches.matches(It-1) ~= 0                                                       
         firstImg = matches.matches(It-1) - params.locationRange;
         lastImg = matches.matches(It-1) + params.locationRange;
-        if firstImg < length(candidateLocationsVotes)
-            candidates = find(candidateLocationsVotes(max(1, firstImg) : min(length(candidateLocationsVotes), lastImg)));
+        if firstImg < length(candidateLocationsScores)
+            candidates = find(candidateLocationsScores(max(1, firstImg) : min(length(candidateLocationsScores), lastImg)));
             candidates = int16(candidates) + max(1, firstImg) -1;
-            [~,idxx] = sort(candidateLocationsVotes(candidates), 'descend');
+            [~,idxx] = sort(candidateLocationsScores(candidates), 'ascend');
             candidates = candidates(idxx);
             if sum(candidates) ~= 0
-                tic % GEOMETRICAL VERIFICATION
+                % start the timer for the geometrical verification
+                tic
                 [properImage, inliersTotal] = geometricalCheck(It, iBoTW, params, candidates, visualData);
+                % stop the timer for the geometrical verification
                 timer.geometricalVerification(It, 1) = toc;
             end
         end                                                             

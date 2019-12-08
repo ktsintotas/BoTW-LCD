@@ -16,8 +16,11 @@
 
 function [matches, HMMresults, iBoTW, timer] = queryingDatabaseHMM(params, visualData, BoTW, timer)
 
-    if params.queryingDatabaseHMM.load == true && exist('results/queryingDatabaseHMM.mat', 'file')    
+    if params.queryingDatabaseHMM.load == true && exist('results/queryingDatabaseHMM.mat', 'file')
         load('results/queryingDatabaseHMM.mat');
+    
+    elseif params.queryingDatabaseHMM.load == true && exist('results/GPUqueryingDatabaseHMM', 'file')
+        load('results/GPUqueryingDatabaseHMM.mat');
 
     else
         
@@ -27,14 +30,6 @@ function [matches, HMMresults, iBoTW, timer] = queryingDatabaseHMM(params, visua
         matches = matchesInitialization(visualData, params);
         % memory allocation for system's results
         HMMresults = HMMinitialization(visualData);
-        % memory allocation for timer for brute force database search pre-allocation
-        timer.databaseSearch = zeros(visualData.imagesLoaded, 1,'single');
-        % memory allocation for timer for votes distribution pre-allocation
-        timer.votesDistribution = zeros(visualData.imagesLoaded, 1,'single');
-        % memory allocation for timer for Bayesian filtering pre-allocation
-        timer.bayesianFiltering = zeros(visualData.imagesLoaded, 1,'single');
-        % memory allocation for timer for geometrical verification pre-allocation
-        timer.geometricalVerification = zeros(visualData.imagesLoaded, 1,'single');
         
         for It = int16(1 : visualData.imagesLoaded)    
 disp(It)
@@ -87,12 +82,22 @@ disp(It)
                 end
                 % stop the timer for the votes' distribution
                 timer.votesDistribution(It, 1) = toc;
-                
+                                
                 % NAVIGATION USING PROBABILISTIC SCORING
-                % high-voted locations for binomial probability computation process
-                imagesForBinomial = int16(find(matches.votesMatrix(It, 1 : lastDatabaseLocation) >= 0.02 * size(iBoTW.queryDescriptors{It}, 1)));
+                if params.temporalConsistency == false || (params.temporalConsistency == true && matches.matches(It-1) == 0)
+                    % high-voted locations for binomial probability computation process
+                    imagesForBinomial = int16(find(matches.votesMatrix(It, 1 : lastDatabaseLocation) >= 0.02 * size(iBoTW.queryDescriptors{It}, 1)));
+                elseif params.temporalConsistency == true && matches.matches(It-1) ~= 0
+                    % number of accumulated votes of database location l
+                    firstImg = matches.matches(It-1) - params.locationRange;
+                    lastImg = matches.matches(It-1) + params.locationRange;
+                    imagesForBinomial = int16(find(matches.votesMatrix(It, max(1, firstImg) : min(length(matches.votesMatrix(It, :)), lastImg)) >= 0.02 * size(iBoTW.queryDescriptors{It}, 1))); 
+                    imagesForBinomial = imagesForBinomial + max(1, firstImg) -1;                    
+                end
+                % start the timer for the binomial scoring
+                tic
                 % locations which pass the two conditions
-                candidateLocationsObservation = zeros(1, lastDatabaseLocation, 'int16');
+                candidateLocationsObservation = zeros(1, lastDatabaseLocation, 'single');
                 % number of Tracked Words within the searching area 
                 LAMDA = databaseIndexTemp;
                 % number of query’s Tracked Points (number of points after the guided feature-detection)
@@ -113,34 +118,39 @@ disp(It)
                 Condition2Locations = int16(find(xl > expectedValue));
                 % locations which satisfy condition 2 and condition 1 - observation 3
                 if ~isempty(Condition2Locations) ... 
-                        && ~isempty(find(locationProbability(Condition2Locations) < params.observationThreshold, 1))
-                    HMMresults.observations(It) = 2;
+                        && ~isempty(find(locationProbability(Condition2Locations) < params.observationThreshold, 1))                        
                     candidateLocations = imagesForBinomial(Condition2Locations(find(locationProbability(Condition2Locations) < params.observationThreshold)));
-                    candidateLocationsObservation(candidateLocations) = matches.votesMatrix(It, candidateLocations);         
+                    candidateLocationsObservation(candidateLocations) = matches.binomialMatrix(It, candidateLocations);
+                    HMMresults.observations(It) = 2;
                 end
+                % stop the timer for the binomial scoring
+                timer.binomialScoring(It, 1) = toc;
                 
                 % MATCHING PROCEDURE
                 % the original approach
-                if params.filtering == false && sum(candidateLocationsObservation3) ~= 0 && params.verification == false                
-                    [~, properImage] = max(candidateLocationsObservation3);
+                if params.filtering == false && sum(candidateLocationsObservation) ~= 0 && params.verification == false
+                    [~, properImage] = max(candidateLocationsObservation);
                     matches.loopClosureMatrix(It, properImage) = true;
                     matches.matches(It) = properImage;
 
                 % using the geometrical check in the original version by searching to every location in cases of votes' equality, also "no" temporal consistency is included
-                elseif params.filtering == false && sum(candidateLocationsObservation3) ~= 0 && params.verification == true          
-                    [votes, ~] = max(candidateLocationsObservation3);
-                    candidates = find(candidateLocationsObservation3 == votes);
+                elseif params.filtering == false && sum(candidateLocationsObservation) ~= 0 && params.verification == true          
+                    [votes, ~] = max(candidateLocationsObservation);
+                    candidates = find(candidateLocationsObservation == votes);
                     properImage = geometricalCheck(It, iBoTW, params, candidates);
                     if properImage ~= 0
                         matches.loopClosureMatrix(It, properImage) = true; 
                         matches.matches(It) = properImage;                                  
                     end
 
-                % filtering the binomial through HMM forward algorithm 
+                % filtering the binomial through Bayes estimation
                 elseif params.filtering == true
-                    % Bayesian filtering                    
-                    [HMMresults, timer] = forwardHMM(HMMresults, params, It, timer);           
-
+                    % start the timer for the Bayesian filtering
+                    tic
+                    [HMMresults] = forwardHMM(HMMresults, params, It);
+                    % stop the timer for the binomial scoring
+                    timer.bayesianFiltering(It, 1) = toc;
+                    
                     % observation 2 and loop closure detection
                     if HMMresults.loopStates(It) == 2 && HMMresults.observations(It) == 2
                         % define the appropriate high-voted loop closure image from the candidate ones
@@ -153,8 +163,8 @@ disp(It)
                         % vocabulary management
                         if  params.vocabularyManagement == true && properImage ~= 0 && matches.loopClosureMatrix(It, properImage) == true
                             wordsToManage = single(find(iBoTW.twIndex(:, 2) == It));                    
-                            if ~isempty(wordsToManage)                        
-                                iBoTW = vocabularyManagement(iBoTW, wordsToManage, It, properImage, matches, visualData, params);                        
+                            if ~isempty(wordsToManage)
+                                [iBoTW, timer] = vocabularyManagement(iBoTW, wordsToManage, It, properImage, matches, visualData, params, timer);
                             end
                         end
                     end
@@ -162,8 +172,10 @@ disp(It)
             end
         end
         
-        if params.queryingDatabaseHMM.save
-            save('results/queryingDatabaseHMM', 'matches', 'HMMresults', 'iBoTW'); 
+        if params.queryingDatabaseHMM.save && params.GPUenabled == false
+            save('results/queryingDatabaseHMM', 'matches', 'HMMresults', 'iBoTW','timer'); 
+        elseif params.queryingDatabaseHMM.save && params.GPUenabled == true
+            save('results/GPUqueryingDatabaseHMM', 'matches', 'HMMresults', 'iBoTW','timer'); 
         end
         
     end    

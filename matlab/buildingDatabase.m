@@ -29,11 +29,7 @@ function [BoTW, timer] = buildingDatabase(visualData, params, timer)
         % initialization of points' tracking validity based on our conditions
         trackObservation = false(params.numPointsToTrack, 1);
         % initialization of points' representation along consecutive features
-        pointRepeatability = ones(params.numPointsToTrack, 1, 'int16');
-        % timer for feature tracking pre-allocation
-        timer.trackingPoints = zeros(visualData.imagesLoaded, 1,'single');
-        % timer for guided feature selection pre-allocation
-        timer.guidedFeatureSelection = zeros(visualData.imagesLoaded, 1,'single');
+        pointRepeatability = ones(params.numPointsToTrack, 1, 'int16');        
 
         for It = int16(1 : visualData.imagesLoaded)
             disp(It)

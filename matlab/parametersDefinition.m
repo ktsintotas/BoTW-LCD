@@ -5,11 +5,11 @@
 %
 % This file is part of HMM-BoTW framework for visual loop closure detection
 %
-% HMM-BoTW framework is free software: you can redistribute 
-% it and/or modify it under the terms of the MIT License as 
+% HMM-BoTW framework is free software: you can redistribute
+% it and/or modify it under the terms of the MIT License as
 % published by the corresponding authors.
 %  
-% HMM-BoTW pipeline is distributed in the hope that it will be 
+% HMM-BoTW pipeline is distributed in the hope that it will be
 % useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
 % MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 % MIT License for more details. <https://opensource.org/licenses/MIT>
@@ -26,7 +26,7 @@ function params = parametersDefinition()
     
     % matches
     params.queryingDatabaseHMM.load = true;
-    params.queryingDatabaseHMM.save = true;     
+    params.queryingDatabaseHMM.save = true;
     
     % features' response, Phi
     params.featuresResponse = 400.0;    
@@ -44,7 +44,7 @@ function params = parametersDefinition()
     params.GPUenabled = true;
     
     % loop closure threshold, th
-    params.observationThreshold = 1e-8;
+    params.observationThreshold = 1e-6;
     
     % hidden markon forward algorithm
     params.filtering = true;    
@@ -56,12 +56,12 @@ function params = parametersDefinition()
     params.HMM.EMIS = [0.93 0.07 ; 0.1 0.9];
     
     % temporal consistency check
-    params.temporalConsistency = false;
+    params.temporalConsistency = true;
     % temporal consistency locations' range
-    params.locationRange = 8;
+    params.locationRange = 12;
     
     % vocabulary management
-    params.vocabularyManagement = false; 
+    params.vocabularyManagement = true;
     % tracked words correspondance visualization
     params.visualizationMerging = false;
     % tracked words' maximum distance
@@ -69,8 +69,8 @@ function params = parametersDefinition()
     % tracked words' correspondence
     params.wordsCorrespondence = 0.5;
     
-    % geometrical verification check 
-    params.verification =  true;                     
+    % geometrical verification check
+    params.verification =  true;             
     % feature matching max ration
     params.maxRatio = 0.5;
     % feature matching least total of points

@@ -16,16 +16,19 @@
 
 function [BoTWnew, timer] = vocabularyManagement(BoTWnew, wordsToManage, It, properImage, matches, visualData, params, timer)
     
-    wordsUpdate = zeros(1, params.numPointsToTrack,'single');
+%     wordsUpdate = zeros(1, length(wordsToManage), 'single');
     wordsDist = zeros(length(wordsToManage), 1);
-    wordsToDelete = [];
+    wordsToDelete = single(zeros(1, length(wordsToManage)));
     
      if params.visualizationMerging == true
          close all;
      end
+     
+    % start the timer for the vocabulaly management
+    tic 
     
     for w = 1 : length(wordsToManage)        
-        tic % WORDS UPDATE        
+
         h = size(BoTWnew.trackedWordDescriptors{wordsToManage(w)}, 1);
         % find which descriptor is being tracked from the query points which subsequently is transformed into Tracked Word
         id = knnsearch(BoTWnew.queryDescriptors{It}, BoTWnew.trackedWordDescriptors{wordsToManage(w)}(end, :), 'K', 1);
@@ -38,8 +41,7 @@ function [BoTWnew, timer] = vocabularyManagement(BoTWnew, wordsToManage, It, pro
         idx = idx(1);
 
         % comparison between the tracked words
-        wordsDist(w) = norm(BoTWnew.bagOfTrackedWords(wordsToManage(w), :) - BoTWnew.bagOfTrackedWords(votedDatabaseWords(idx), :));        
-        wordsUpdate(1, w) = toc;
+        wordsDist(w) = norm(BoTWnew.bagOfTrackedWords(wordsToManage(w), :) - BoTWnew.bagOfTrackedWords(votedDatabaseWords(idx), :));
         
         if wordsDist(w) <= params.wordsDist && (occurences/h) > params.wordsCorrespondence && ...  
                 BoTWnew.twLocationIndex(votedDatabaseWords(idx), properImage) == true                
@@ -68,21 +70,22 @@ function [BoTWnew, timer] = vocabularyManagement(BoTWnew, wordsToManage, It, pro
                
             end
             
-            wordsToDelete = [wordsToDelete ; wordsToManage(w)];
+            wordsToDelete(w) = wordsToManage(w);
             
             % renew the index of the existing word            
             BoTWnew.twLocationIndex(votedDatabaseWords(idx), ...
                   BoTWnew.twIndex(wordsToManage(w), 1) : BoTWnew.twIndex(wordsToManage(w), 2)) = true;
             % hold a counter about how many times a word is merged
-            BoTWnew.twMergerCounter(votedDatabaseWords(idx)) = BoTWnew.twMergerCounter(votedDatabaseWords(idx)) + 1;
-                
+            BoTWnew.twMergerCounter(votedDatabaseWords(idx)) = BoTWnew.twMergerCounter(votedDatabaseWords(idx)) + 1;               
+
         end
     end
     
-    wordsUpdate = mean(wordsUpdate);
-    timer.wordsUpdate(It, 1) = wordsUpdate;   
+    % stop the timer for the vocabulaly management
+    timer.wordsUpdate(It, 1) = toc;   
         
     % deleting the generated words which are very similar and are merged
+    wordsToDelete = wordsToDelete(wordsToDelete>0)';
     BoTWnew.bagOfTrackedWords(wordsToDelete, :) = [];
     BoTWnew.twIndex(wordsToDelete, :) = [];
     BoTWnew.twLocationIndex(wordsToDelete, :) = [];

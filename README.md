@@ -1,4 +1,4 @@
-# Are 50K Words Enough for Place Recognition? A 
+# Are 50K Words Enough for Place Recognition? A <br/> 
 # Visual Loop-Closure Detection Paradigm Using 
 # Incremental Bag of Tracked Words
 

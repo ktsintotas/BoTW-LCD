@@ -32,7 +32,7 @@ function [matches, HMMresults, iBoTW, timer] = queryingDatabaseHMM(params, visua
         HMMresults = HMMinitialization(visualData);
         
         for It = int16(1 : visualData.imagesLoaded)    
-disp(It)
+
             % SEARCHING THE DATABASE
             % excluding the vocabulary area which would be avoided  
             if iBoTW.maximumActivePoint(It) < visualData.frameRate

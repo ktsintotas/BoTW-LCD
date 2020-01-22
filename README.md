@@ -15,20 +15,5 @@ The details of the algorithm are explained in the [following publication](https:
 Konstantinos A. Tsintotas, Loukas Bampis, and Antonios Gasteratos<br/>
 Under review in IEEE Transaction on Robotics 
 
-If you use this code, please cite:
-
-```
-% @ARTICLE{tsintotas2019probabilistic,
-  title={Probabilistic Appearance-Based Place Recognition Through Bag of Tracked Words},  
-  author={K. A. Tsintotas and L. Bampis and A. Gasteratos},   
-  journal={IEEE Transaction on Robotics},
-  volume={},
-  number={},
-  pages={},
-  year={},   
-  month={}, 
-  doi={}  
-}
-```
 ## Contact
 If you have problems or questions using this code, please contact the author (ktsintot@pme.duth.gr). Ground truth requests and contributions are totally welcome.

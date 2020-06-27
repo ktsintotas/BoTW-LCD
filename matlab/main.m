@@ -24,7 +24,7 @@ params = parametersDefinition();
 % extraction of visual sensory information
 [visualData, timer] = incomingVisualData(params, dataPath, dataFormat);
 % dataset's frame rate definition
-visualData.frameRate = 1; 
+visualData.frameRate = 10; 
 % timers memory allocation
 timer = timersInitialization(visualData, timer);
 % 1) the vocabulary build

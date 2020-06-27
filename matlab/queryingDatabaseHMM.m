@@ -129,9 +129,14 @@ function [matches, HMMresults, iBoTW, timer] = queryingDatabaseHMM(params, visua
                 % MATCHING PROCEDURE
                 % the original approach
                 if params.filtering == false && sum(candidateLocationsObservation) ~= 0 && params.verification == false
-                    [~, properImage] = max(candidateLocationsObservation);
+                    [value, ~] = min(candidateLocationsObservation(candidateLocationsObservation>0));
+                    if value ~= 0
+                        % max function is used in order to decide between two similar binomial scores Images
+                        properImage = find(candidateLocationsObservation == value, 1, 'last');
+                    end
                     matches.loopClosureMatrix(It, properImage) = true;
-                    matches.matches(It) = properImage;
+                    matches.matches(It, 1) = properImage;
+                    matches.matches(It, 2) = value; 
 
                 % using the geometrical check in the original version by searching to every location in cases of votes' equality, also "no" temporal consistency is included
                 elseif params.filtering == false && sum(candidateLocationsObservation) ~= 0 && params.verification == true          

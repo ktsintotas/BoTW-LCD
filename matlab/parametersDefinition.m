@@ -47,7 +47,7 @@ function params = parametersDefinition()
     params.observationThreshold = 1e-6;
     
     % hidden markon forward algorithm
-    params.filtering = true;    
+    params.filtering = false;    
     % transition matrix states
     params.numStates = 2;
     % hidden markov model transition matrix
@@ -56,12 +56,12 @@ function params = parametersDefinition()
     params.HMM.EMIS = [0.93 0.07 ; 0.1 0.9];
     
     % temporal consistency check
-    params.temporalConsistency = true;
+    params.temporalConsistency = false;
     % temporal consistency locations' range
     params.locationRange = 12;
     
     % vocabulary management
-    params.vocabularyManagement = true;
+    params.vocabularyManagement = false;
     % tracked words correspondance visualization
     params.visualizationMerging = false;
     % tracked words' maximum distance
@@ -70,7 +70,7 @@ function params = parametersDefinition()
     params.wordsCorrespondence = 0.5;
     
     % geometrical verification check
-    params.verification =  true;             
+    params.verification =  false;             
     % feature matching max ration
     params.maxRatio = 0.5;
     % feature matching least total of points

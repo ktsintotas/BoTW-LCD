@@ -21,8 +21,6 @@ function timer = timersInitialization(visualData, timer)
     % memory allocation for timer for guided feature selection
     timer.guidedFeatureSelection = zeros(visualData.imagesLoaded, 1,'single');
     % memory allocation for timer for brute force database search
-    timer.wordMerging = zeros(visualData.imagesLoaded, 1,'single');
-    % memory allocation for timer for brute force database search
     timer.databaseSearch = zeros(visualData.imagesLoaded, 1,'single');
     % memory allocation for timer for votes distribution
     timer.votesDistribution = zeros(visualData.imagesLoaded, 1,'single');
@@ -32,7 +30,5 @@ function timer = timersInitialization(visualData, timer)
     timer.bayesianFiltering = zeros(visualData.imagesLoaded, 1,'single');
     % memory allocation for timer for geometrical verification 
     timer.geometricalVerification = zeros(visualData.imagesLoaded, 1,'single');
-    % memory allocation for timer for geometrical verification 
-    timer.wordsUpdate = zeros(visualData.imagesLoaded, 1,'single');
     
 end

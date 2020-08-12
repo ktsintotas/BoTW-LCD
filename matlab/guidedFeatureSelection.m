@@ -1,15 +1,15 @@
 % 
 
-% Copyright 2019, Konstantinos Tsintotas
+% Copyright 2020, Konstantinos A. Tsintotas
 % ktsintot@pme.duth.gr
 %
-% This file is part of HMM-BoTW framework for visual loop closure detection
+% This file is part of BoTW-LCD framework for visual loop closure detection
 %
-% HMM-BoTW framework is free software: you can redistribute 
+% BoTW-LCD framework is free software: you can redistribute 
 % it and/or modify it under the terms of the MIT License as 
 % published by the corresponding authors.
 %  
-% HMM-BoTW pipeline is distributed in the hope that it will be 
+% BoTW-LCD pipeline is distributed in the hope that it will be 
 % useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
 % MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 % MIT License for more details. <https://opensource.org/licenses/MIT>
@@ -17,14 +17,14 @@
 function [pointsFedtoTracker, pointsDescriptors, pointRepeatability, trackObservation, pointsToSearch, descriptorsToSearch, trackedPointsBag, trackedDescriptorsBag, timer] = ...
     guidedFeatureSelection(params, visualData, previousImg, It, pointsFedtoTracker, pointsDescriptors, trackedPoints, trackedPointsValidity, pointRepeatability, trackedPointsBag, trackedDescriptorsBag, trackObservation, timer)
     
-    pointsToSearch = single(visualData.pointsSURF{It}.Location);        
-    descriptorsToSearch = visualData.featuresSURF{It};
+    pointsToSearch = single(visualData.points{It}.Location);        
+    descriptorsToSearch = visualData.features{It};
     excludedPoint = int16([]);
     % allocate the timer
-    guidedFeatureSelectionTiming = zeros(1, params.numPointsToTrack,'single');
+    guidedFeatureSelectionTiming = zeros(1, params.buildingDatabase.numPointsToTrack,'single');
     
-    for j = 1 : params.numPointsToTrack
-        
+    for j = 1 : params.buildingDatabase.numPointsToTrack
+
         % exclusion of point that used before from guided point detection in order a duplicate to be avoided
         pointsToSearch(excludedPoint, :) = [];
         % exclusion of descriptor that used before from guided feature detection in order a duplicate to be avoided
@@ -35,16 +35,16 @@ function [pointsFedtoTracker, pointsDescriptors, pointRepeatability, trackObserv
         
         % check if point of the previous image is tracked in the current and if the number of points are lower the desired            
         if j <= size(trackedPointsValidity, 1) && trackedPointsValidity(j) == 1 && ~isempty(pointsToSearch)
-            % edo itant to tic
+  
             % nearest neighbor index and points' distance between the tracked point "tp" and SURF points "SP" in I(t)
             [IdxNN, pointsDist] = knnsearch(pointsToSearch, trackedPoints(j, :), 'K', 1, 'NSMethod', 'kdtree');
             % SURF Points nearest neighbor in order to find the appropriate descriptor in previous image
-            [p, ~] = knnsearch(visualData.pointsSURF{previousImg}.Location, pointsFedtoTracker(j, :), 'K', 1, 'NSMethod', 'kdtree' );
+            [p, ~] = knnsearch(visualData.points{previousImg}.Location, pointsFedtoTracker(j, :), 'K', 1, 'NSMethod', 'kdtree' );
             % descriptors' distance
-            descriptorsDist= norm(visualData.featuresSURF{previousImg}(p, :) - descriptorsToSearch(IdxNN, :));
-
+            descriptorsDist= norm(visualData.features{previousImg}(p, :) - descriptorsToSearch(IdxNN, :));
+        
             % two conditions for acceptance of a tracked point
-            if pointsDist < params.pointsDist && descriptorsDist < params.descriptorsDist
+            if pointsDist < params.buildingDatabase.pointsDist && descriptorsDist < params.buildingDatabase.descriptorsDist
                 % accepted point and descriptor
                 trackObservation(j) = true;
                 % to maintain the correct point detected in the current image                                     
@@ -58,12 +58,11 @@ function [pointsFedtoTracker, pointsDescriptors, pointRepeatability, trackObserv
                 % point repeatability along consecutive images
                 pointRepeatability(j) = pointRepeatability(j) + 1;
                 % point to be deleted from the repetitive function
-                excludedPoint = IdxNN;                
+                excludedPoint = IdxNN;
             else                
                 trackObservation(j) = false; 
-                excludedPoint = [];
+                excludedPoint = [];                              
             end
-
         else
             trackObservation(j) = false;      
             excludedPoint = [];
@@ -73,8 +72,6 @@ function [pointsFedtoTracker, pointsDescriptors, pointRepeatability, trackObserv
         guidedFeatureSelectionTiming(1, j) = toc;
         
     end
-    % stop the timer for the vocabulaly management
-%     timer.wordsUpdate(It, 1) = toc;   
     
     guidedFeatureSelectionTiming = mean(guidedFeatureSelectionTiming);
     timer.guidedFeatureSelection(It, 1) = guidedFeatureSelectionTiming;

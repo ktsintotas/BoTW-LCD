@@ -1,84 +1,70 @@
 % 
 
-% Copyright 2019, Konstantinos A. Tsintotas
+% Copyright 2020, Konstantinos A. Tsintotas
 % ktsintot@pme.duth.gr
 %
-% This file is part of HMM-BoTW framework for visual loop closure detection
+% This file is part of BoTW-LCD framework for visual loop closure detection
 %
-% HMM-BoTW framework is free software: you can redistribute
-% it and/or modify it under the terms of the MIT License as
+% BoTW-LCD framework is free software: you can redistribute 
+% it and/or modify it under the terms of the MIT License as 
 % published by the corresponding authors.
 %  
-% HMM-BoTW pipeline is distributed in the hope that it will be
+% BoTW-LCD pipeline is distributed in the hope that it will be 
 % useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
 % MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 % MIT License for more details. <https://opensource.org/licenses/MIT>
 
 function params = parametersDefinition()
     
-    % visual information
+    % incomingVisualData
     params.visualData.load = true;
-    params.visualData.save = true;
+    params.visualData.save = true;    
+    % points' response, Phi (incomingVisualData)
+    params.incomingVisualData.featuresResponse = 400.0;
+    % strongest points to hold, Phi (incomingVisualData)
+    params.incomingVisualData.strongest = 1000;
+    % descriptor dimension (incomingVisualData)
+    params.incomingVisualData.descriptorDimension = uint8(64);    
     
-    % database
+    % buildingDatabase 
     params.buildingDatabase.load = true;
-    params.buildingDatabase.save = true;
+    params.buildingDatabase.save = true; 
+    % number of maximum points fed into the tracker, ni (buildingDatabase)
+    params.buildingDatabase.numPointsToTrack = uint16(150);
+    % minimum track word length, rho (buildingDatabase)
+    params.buildingDatabase.trackLength = uint8(4);
+    % minimum pointss distance, alpha (buildingDatabase)
+    params.buildingDatabase.pointsDist = single(5);
+    % minimum descriptors distance, vita (buildingDatabase)
+    params.buildingDatabase.descriptorsDist = single(0.6);
+    % minimum words sampling ratio (buildingDatabase)
+    params.buildingDatabase.wordsRatio = single(0.5);
     
-    % matches
-    params.queryingDatabaseHMM.load = true;
-    params.queryingDatabaseHMM.save = true;
+    % queryingDatabase
+    params.queryingDatabase.load = true;
+    params.queryingDatabase.save = true;
+    % loop closure threshold, th (queryingDatabase)
+    params.queryingDatabase.observationThreshold = 2e-9;
+    % transition matrix states (queryingDatabase)
+    params.queryingDatabase.numStates = 2;
+    % hidden markov model transition matrix (queryingDatabase)
+    params.queryingDatabase.HMM.TRANS = [ 0.975 0.025 ;  0.025 0.975];
+    % hidden markov model emission matrix (queryingDatabase)
+    params.queryingDatabase.HMM.EMIS = [1 0 ; 0.46 0.54];        
+    % temporal consistency locations' range (queryingDatabase)
+    params.queryingDatabase.locationRange = 5;    
     
-    % features' response, Phi
-    params.featuresResponse = 400.0;    
-
-    % number of maximum points fed into the tracker, ni
-    params.numPointsToTrack = int16(200);
-    % minimum track word length, rho
-    params.trackLength = int8(4);
-    % minimum pointss distance, alpha
-    params.pointsDist = single(5);
-    % minimum descriptors distance, vita
-    params.descriptorsDist = single(0.6);
+    % feature matching max ration (queryingDatabase)
+    params.queryingDatabase.maxRatio = 0.4;
+    % RANSAC inliers, phi (queryingDatabase)
+    params.queryingDatabase.inliersTheshold = uint16(8);    
     
-    % using the GPU if supported
-    params.GPUenabled = true;
+    % tracked words' maximum distance (queryingDatabase)
+    params.queryingDatabase.wordsDist = 0.4;
+    % tracked words' correspondence (queryingDatabase)
+    params.queryingDatabase.wordsCorrespondence = 0.5;
     
-    % loop closure threshold, th
-    params.observationThreshold = 1e-6;
-    
-    % hidden markon forward algorithm
-    params.filtering = false;    
-    % transition matrix states
-    params.numStates = 2;
-    % hidden markov model transition matrix
-    params.HMM.TRANS = [0.98 0.02 ; 0.03 0.97];
-    % hidden markov model emission matrix
-    params.HMM.EMIS = [0.93 0.07 ; 0.1 0.9];
-    
-    % temporal consistency check
-    params.temporalConsistency = false;
-    % temporal consistency locations' range
-    params.locationRange = 12;
-    
-    % vocabulary management
-    params.vocabularyManagement = false;
-    % tracked words correspondance visualization
-    params.visualizationMerging = false;
-    % tracked words' maximum distance
-    params.wordsDist = 0.2;
-    % tracked words' correspondence
-    params.wordsCorrespondence = 0.5;
-    
-    % geometrical verification check
-    params.verification =  false;             
-    % feature matching max ration
-    params.maxRatio = 0.5;
-    % feature matching least total of points
-    params.numPointsToMatch = 400;
-    % RANSAC inliers, phi
-    params.inliersTheshold = int16(9);
-    
-    % evaluation visualization results
+    % evaluation visualization results 
     params.visualizationResults = true;
     
 end

@@ -1,69 +1,67 @@
 % 
 
-% Copyright 2019, Konstantinos A. Tsintotas
+% Copyright 2020, Konstantinos A. Tsintotas
 % ktsintot@pme.duth.gr
 %
-% This file is part of iBoTW framework for visual loop closure detection
+% This file is part of BoTW-LCD framework for visual loop closure detection
 %
-% iBoTW framework is free software: you can redistribute 
+% BoTW-LCD framework is free software: you can redistribute 
 % it and/or modify it under the terms of the MIT License as 
 % published by the corresponding authors.
 %  
-% iBoTW pipeline is distributed in the hope that it will be 
+% BoTW-LCD pipeline is distributed in the hope that it will be 
 % useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
 % MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 % MIT License for more details. <https://opensource.org/licenses/MIT>
 
-function [properImage, inliersTotal, timer] = locationDefinition(params, matches, candidateLocationsScores, It, iBoTW, visualData, timer)
+function [properImage, inliersTotal, HMMresults, timer] = locationDefinition(params, HMMresults, matches, candidateLocationsScores, It, iBoTW, visualData, timer)
 
-    inliersTotal = int16(0);
-    properImage = int16(0);
     
-    % geometrical check = OFF, temporal consistency = OFF
-    if params.verification == false && (params.temporalConsistency == false || (params.temporalConsistency == true && matches.matches(It-1) == 0))
-        [value, ~] = min(candidateLocationsScores(candidateLocationsScores>0));
-        if value ~= 0                       
-            properImage = max(find(candidateLocationsScores == value));
-        end
-    % geometrical check = OFF, temporal consistency = ON
-    elseif params.verification == false && params.temporalConsistency == true && matches.matches(It-1) ~= 0
-        firstImg = matches.matches(It-1) - params.locationRange;
-        lastImg = matches.matches(It-1) + params.locationRange;
-        if firstImg < length(candidateLocationsScores)
-            scores = candidateLocationsScores(max(1, firstImg) : min(length(candidateLocationsScores), lastImg));
-            [value, ~] = min(scores(scores>0));
-            if value ~= 0
-                properImage = max(find(candidateLocationsScores == value));
-            end
-        end                            
-    % geometrical check = ON, temporal consistency = OFF
-    elseif params.verification == true && (params.temporalConsistency == false || (params.temporalConsistency == true && matches.matches(It-1) == 0))       
+    properImage = uint16(0);
+    inliersTotal = uint16(0);    
+
+    % HMM observation == 2
+    if HMMresults.observations(It) == 2     
         candidates = find(candidateLocationsScores);
-        [~,idxx] = sort(candidateLocationsScores(candidates), 'ascend');
-        candidates = candidates(idxx);
-        if sum(candidates) ~= 0
+        if length(candidates) < 10
+            [~,idxx] = sort(candidateLocationsScores(candidates), 'ascend');
+            candidates = candidates(idxx(1)); 
+            firstImg = max(1, candidates - params.queryingDatabase.locationRange);
+            lastImg = candidates + params.queryingDatabase.locationRange;
+            candidateLocationsScores = matches.binomialMatrix(It, firstImg : lastImg);            
+            [~,idxx] = sort(candidateLocationsScores, 'ascend');
+            candidates = firstImg : lastImg;
+            candidates = candidates(idxx);
+            c = matches.binomialMatrix(It, (candidates))>0;
+            candidates = candidates(c ==true);           
+        else
+            [~,idxx] = sort(candidateLocationsScores(candidates), 'ascend');
+            candidates = candidates(idxx); 
+        end
+        if ~isempty(candidates)
             % start the timer for the geometrical verification
             tic            
             [properImage, inliersTotal] = geometricalCheck(It, iBoTW, params, candidates, visualData);            
             % stop the timer for the geometrical verification
             timer.geometricalVerification(It, 1) = toc;
         end
-    % geometrical check = ON, temporal consistency = ON
-    elseif params.verification == true && params.temporalConsistency == true && matches.matches(It-1) ~= 0                                                       
-        firstImg = matches.matches(It-1) - params.locationRange;
-        lastImg = matches.matches(It-1) + params.locationRange;
-        if firstImg < length(candidateLocationsScores)
-            candidates = find(candidateLocationsScores(max(1, firstImg) : min(length(candidateLocationsScores), lastImg)));
-            candidates = int16(candidates) + max(1, firstImg) -1;
-            [~,idxx] = sort(candidateLocationsScores(candidates), 'ascend');
-            candidates = candidates(idxx);
-            if sum(candidates) ~= 0
-                % start the timer for the geometrical verification
-                tic
-                [properImage, inliersTotal] = geometricalCheck(It, iBoTW, params, candidates, visualData);
-                % stop the timer for the geometrical verification
-                timer.geometricalVerification(It, 1) = toc;
-            end
-        end                                                             
+        
+    % HMM observation == 1
+    elseif HMMresults.observations(It) == 1 && matches.matches(It-1) ~= 0
+        firstImg = max(1, matches.matches(It-1) - params.queryingDatabase.locationRange);
+        lastImg = matches.matches(It-1) + params.queryingDatabase.locationRange;        
+        candidateLocationsScores = matches.binomialMatrix(It, firstImg : lastImg);   
+        [~,idxx] = sort(candidateLocationsScores, 'ascend');
+        candidates = firstImg : lastImg;
+        candidates = candidates(idxx);        
+        c = matches.binomialMatrix(It, (candidates))>0;
+        candidates = candidates(c ==true);          
+        % start the timer for the geometrical verification
+        if ~isempty(candidates)
+            tic
+            [properImage, inliersTotal] = geometricalCheck(It, iBoTW, params, candidates, visualData);            
+            % stop the timer for the geometrical verification
+            timer.geometricalVerification(It, 1) = toc;
+        end
     end
 end

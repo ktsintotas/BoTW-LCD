@@ -1,22 +1,20 @@
 % 
 
-% Copyright 2019, Konstantinos A. Tsintotas
+% Copyright 2020, Konstantinos A. Tsintotas
 % ktsintot@pme.duth.gr
 %
-% This file is part of HMM-BoTW framework for visual loop closure detection
+% This file is part of BoTW-LCD framework for visual loop closure detection
 %
-% HMM-BoTW framework is free software: you can redistribute 
+% BoTW-LCD framework is free software: you can redistribute 
 % it and/or modify it under the terms of the MIT License as 
 % published by the corresponding authors.
 %  
-% HMM-BoTW pipeline is distributed in the hope that it will be 
+% BoTW-LCD pipeline is distributed in the hope that it will be 
 % useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
 % MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 % MIT License for more details. <https://opensource.org/licenses/MIT>
 
 function results = methodEvaluation(params, matches, groundTruthMatrix) 
-
-%% Method Evaluation
 
     results = zeros(1, 6);
        
@@ -64,7 +62,7 @@ function results = methodEvaluation(params, matches, groundTruthMatrix)
     results(1, 2) = recallScore;   
     results(1, 3) = int16(truePositives);   
     results(1, 4) = int16(falsePositives);
-    results(1, 5) = params.observationThreshold;    
+    results(1, 5) = params.queryingDatabase.observationThreshold;    
     results(1, 6) = groundTruthNumber;
     
 end

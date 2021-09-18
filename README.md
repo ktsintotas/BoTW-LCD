@@ -21,7 +21,7 @@ The details of the algorithm are explained in the [following publication](https:
 
 **Modest-vocabulary loop-closure detection with incremental bag of tracked words<br/>**
 Konstantinos A. Tsintotas, Loukas Bampis, and Antonios Gasteratos<br/>
-Robotics and Autonomous Systems 
+Robotics and Autonomous Systems (Elsevier)
 
 If you use this code, please cite:
 
@@ -40,4 +40,4 @@ If you use this code, please cite:
 ```
 
 ## Contact
-If you have problems or questions using this code, please contact the author (e-mail address: ktsintot@pme.duth.gr, ktsintotas@icloud.com).
+If you have problems or questions using this code, please contact the author (e-mail address: ktsintot@pme.duth.gr, ktsintotas@icloud.com). Contributions are totally welcome.

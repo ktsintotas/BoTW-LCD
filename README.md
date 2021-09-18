@@ -29,7 +29,7 @@ If you use this code, please cite:
 @article{tsintotas2021botw,
   title={Modest-vocabulary loop-closure detection with incremental bag of tracked words},  
   author={K. A. Tsintotas and L. Bampis and A. Gasteratos},   
-  booktitle={Robotics and Autonomous Systems},
+  journal={Robotics and Autonomous Systems},
   pages={103782},
   volume={141},
   year={2021},   

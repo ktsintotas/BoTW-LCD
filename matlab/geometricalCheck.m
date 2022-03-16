@@ -32,10 +32,10 @@ function [properImage, inliersTotal] = geometricalCheck(It, iBoTW, params, candi
     if i < iterations
         i = i + 1;
     elseif i <= iterations && acceptedImage == false
-        acceptedImage = true;       
+        acceptedImage = true;
     end
     
-        indexPairs = matchFeatures(iBoTW.queryDescriptors{It}, ...        
+        indexPairs = matchFeatures(iBoTW.queryDescriptors{It}, ...
             visualData.features{candidate(i)}, 'Unique', true, 'Method', 'Exhaustive',  'MatchThreshold', 10.0, 'MaxRatio', params.queryingDatabase.maxRatio);
         
         if size(indexPairs, 1) >= params.queryingDatabase.inliersTheshold
@@ -47,7 +47,7 @@ function [properImage, inliersTotal] = geometricalCheck(It, iBoTW, params, candi
                     'Method', 'RANSAC', 'DistanceType', 'Algebraic', 'DistanceThreshold', 1);
                 if sum(inliersIndex) >= params.queryingDatabase.inliersTheshold
                     properImage = candidate(i);
-                    inliersTotal = sum(inliersIndex);                
+                    inliersTotal = sum(inliersIndex);
                     acceptedImage = true;
                 end
             catch
